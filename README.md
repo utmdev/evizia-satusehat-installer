@@ -11,18 +11,23 @@ Panduan ringkas ini ditujukan untuk Tim IT / Sysadmin Rumah Sakit untuk melakuka
 
 ---
 
-## ⚡ Langkah Instalasi (Mudah & Cepat)
+## ⚡ Langkah Instalasi
 
-### Langkah 1: Upload & Ekstrak File ZIP
-Upload file `satusehat-installer.zip` ke server Linux Anda (misal ke folder `/opt/satusehat-engine`), lalu ekstrak:
+### Langkah 1: Siapkan Folder Installer
+Pilih salah satu metode untuk mengunduh installer ke server:
 
+**Metode A (Rekomendasi - Git Clone):**
 ```bash
-# 1. Buat folder instalasi
+git clone https://github.com/utmdev/evizia-satusehat-installer.git /opt/satusehat-engine
+cd /opt/satusehat-engine
+```
+
+**Metode B (Upload ZIP):**
+Upload file `satusehat-installer.zip` ke server Anda, lalu ekstrak:
+```bash
 sudo mkdir -p /opt/satusehat-engine
 sudo chown -R $USER:$USER /opt/satusehat-engine
 cd /opt/satusehat-engine
-
-# 2. Ekstrak file zip installer
 unzip satusehat-installer.zip
 ```
 
@@ -32,7 +37,7 @@ unzip satusehat-installer.zip
 Jalankan perintah ini sekali di terminal server untuk mengizinkan server mengunduh image aplikasi dari vendor:
 
 ```bash
-echo "TOKEN_YANG_DIBERIKAN_VENDOR" | docker login ghcr.io -u USERNAME_VENDOR --password-stdin
+echo "TOKEN_YANG_DIBERIKAN_VENDOR" | docker login ghcr.io -u utmdev --password-stdin
 ```
 
 ---
@@ -51,15 +56,36 @@ chmod +x setup.sh
 
 ### Langkah 4: Selesai & Akses Portal
 Setelah instalasi selesai, terminal akan menampilkan informasi akses:
-1. **URL Portal Web**: `http://<IP_SERVER_ANDA>` (Login awal: `admin` / `admin`).
+1. **URL Portal Web**: `http://<IP_SERVER_ANDA>:<WEB_PORT>` (Login awal: `admin` / `admin`).
 2. **API Key SIMRS**: Diberikan kepada tim pengembang SIMRS pada header `X-SIMRS-API-Key`.
+
+---
+
+## 🌐 Panduan Pengaturan Port (File `.env`)
+
+Jika server rumah sakit Anda sudah menjalankan aplikasi lain (misal web server Apache/Nginx atau database PostgreSQL lain), Anda dapat menyesuaikan port di file `.env`:
+
+| Variabel di `.env` | Default | Status | Keterangan & Panduan |
+|---|---|---|---|
+| `WEB_PORT` | `80` | ✅ **Boleh Diubah** | Port web portal dashboard yang diakses dari browser pengguna/admin (misal: ubah ke `9191` jika port 80 sudah dipakai Apache/Nginx server RS). Akses menjadi: `http://<IP_SERVER>:9191` |
+| `API_PORT` | `3000` | ✅ **Boleh Diubah** | Port host untuk REST API backend (misal: ubah ke `9192` jika port 3000 sudah dipakai service lain). |
+| `DB_PORT` | `5432` | ✅ **Boleh Diubah** | Port host PostgreSQL jika menggunakan database bawaan container (misal: ubah ke `9193` jika host server RS sudah memiliki service PostgreSQL lokal). |
+
+> ⚠️ **PENTING: Aturan Koneksi Database Internal (`DATABASE_URL`)**:
+> - Perubahan `DB_PORT` di atas **hanya mengubah port yang terekspos ke host luar**.
+> - Di dalam Docker Network internal, aplikasi backend tetap menghubungi database pada port default **5432** (`postgresql:5432`).
+> - **Jangan mengubah port 5432 pada variabel `DATABASE_URL`** jika menggunakan database bawaan container, contoh yang benar:
+>   ```ini
+>   DATABASE_URL=postgresql://satusehat_user:PASSWORD@postgresql:5432/satusehat_engine
+>   ```
 
 ---
 
 ## 🛠️ Perintah Operasional Harian
 * **Cek Status Service**: `docker compose ps`
 * **Melihat Log Aplikasi**: `docker compose logs -f`
+* **Melihat Log Service Tertentu**: `docker compose logs -f backend` atau `docker compose logs -f worker`
 * **Restart Aplikasi**: `docker compose restart`
 * **Stop Aplikasi**: `docker compose down`
 
-> ℹ **Fitur Auto-Update**: Aplikasi ini dilengkapi dengan *Watchtower*. Setiap kali vendor merilis perbaikan/fitur baru, aplikasi akan otomatis terupdate di server Anda secara berkala tanpa perlu instalasi ulang.
+> ℹ️ **Fitur Auto-Update**: Aplikasi ini dilengkapi dengan *Watchtower*. Setiap kali vendor merilis perbaikan/fitur baru, aplikasi akan otomatis terupdate di server Anda secara berkala tanpa perlu instalasi ulang.
