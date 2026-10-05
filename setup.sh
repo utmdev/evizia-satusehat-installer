@@ -79,7 +79,7 @@ else
 NODE_ENV=production
 
 # Registry Image
-IMAGE_PREFIX=ghcr.io/your-github-username/satusehat-engine
+IMAGE_PREFIX=ghcr.io/utmdev/evizia-satusehat-engine
 
 # Profile Docker (with-db untuk menyalakan database container)
 COMPOSE_PROFILES=${COMPOSE_PROFILES}
