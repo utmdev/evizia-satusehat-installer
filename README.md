@@ -4,7 +4,7 @@ Panduan ringkas ini ditujukan untuk Tim IT / Sysadmin Rumah Sakit untuk melakuka
 
 ---
 
-## 📋 Prasyarat Server
+## 📋 Spesifikasi Server
 1. **Sistem Operasi**: Linux (Ubuntu 20.04/22.04/24.04 LTS, Debian, CentOS, Rocky Linux).
 2. **Tools**: Docker & Docker Compose sudah terpasang.
 3. **Koneksi Internet**: Diperlukan saat pertama kali instalasi untuk mengunduh image aplikasi.
@@ -13,22 +13,12 @@ Panduan ringkas ini ditujukan untuk Tim IT / Sysadmin Rumah Sakit untuk melakuka
 
 ## ⚡ Langkah Instalasi
 
-### Langkah 1: Siapkan Folder Installer
-Pilih salah satu metode untuk mengunduh installer ke server:
+### Langkah 1: Clone Repositori Installer
+Unduh berkas installer ke folder `/opt/satusehat-engine`:
 
-**Metode A (Rekomendasi - Git Clone):**
 ```bash
 git clone https://github.com/utmdev/evizia-satusehat-installer.git /opt/satusehat-engine
 cd /opt/satusehat-engine
-```
-
-**Metode B (Upload ZIP):**
-Upload file `satusehat-installer.zip` ke server Anda, lalu ekstrak:
-```bash
-sudo mkdir -p /opt/satusehat-engine
-sudo chown -R $USER:$USER /opt/satusehat-engine
-cd /opt/satusehat-engine
-unzip satusehat-installer.zip
 ```
 
 ---
