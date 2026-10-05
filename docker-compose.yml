@@ -1,0 +1,113 @@
+name: satusehat-engine
+
+services:
+  # -------------------------------------------------------------------
+  # 🗄️ DATABASE POSTGRESQL (Skenario 1: Bundled Container)
+  # Hanya akan berjalan jika COMPOSE_PROFILES=with-db di file .env
+  # -------------------------------------------------------------------
+  postgresql:
+    image: postgres:16-alpine
+    container_name: satusehat-db
+    restart: always
+    profiles:
+      - with-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-satusehat_engine}
+      POSTGRES_USER: ${DB_USER:-satusehat_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-satusehat_password_123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - satusehat_net
+
+  backend:
+    image: ${IMAGE_PREFIX:-ghcr.io/your-username/satusehat-engine}/backend:latest
+    container_name: satusehat-backend
+    restart: always
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DB_HOST: ${DB_HOST:-postgresql}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-satusehat_engine}
+      DB_USER: ${DB_USER:-satusehat_user}
+      DB_PASSWORD: ${DB_PASSWORD:-satusehat_password_123}
+      DATABASE_URL: postgresql://${DB_USER:-satusehat_user}:${DB_PASSWORD:-satusehat_password_123}@${DB_HOST:-postgresql}:${DB_PORT:-5432}/${DB_NAME:-satusehat_engine}
+      JWT_SECRET: ${JWT_SECRET:-replace-with-a-random-secret-at-least-32-characters}
+      CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:-replace-with-64-random-hex-characters}
+      API_PORT: 3000
+      PG_BOSS_SCHEMA: ${PG_BOSS_SCHEMA:-pgboss}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      SIMRS_BRIDGE_API_KEY: ${SIMRS_BRIDGE_API_KEY:-replace-with-a-long-random-api-key}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${API_PORT:-3000}:3000"
+    networks:
+      - satusehat_net
+
+  worker:
+    image: ${IMAGE_PREFIX:-ghcr.io/your-username/satusehat-engine}/backend:latest
+    container_name: satusehat-worker
+    command: pnpm run start:worker:prod
+    restart: always
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DB_HOST: ${DB_HOST:-postgresql}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-satusehat_engine}
+      DB_USER: ${DB_USER:-satusehat_user}
+      DB_PASSWORD: ${DB_PASSWORD:-satusehat_password_123}
+      DATABASE_URL: postgresql://${DB_USER:-satusehat_user}:${DB_PASSWORD:-satusehat_password_123}@${DB_HOST:-postgresql}:${DB_PORT:-5432}/${DB_NAME:-satusehat_engine}
+      JWT_SECRET: ${JWT_SECRET:-replace-with-a-random-secret-at-least-32-characters}
+      CONFIG_ENCRYPTION_KEY: ${CONFIG_ENCRYPTION_KEY:-replace-with-64-random-hex-characters}
+      PG_BOSS_SCHEMA: ${PG_BOSS_SCHEMA:-pgboss}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - backend
+    networks:
+      - satusehat_net
+
+  frontend:
+    image: ${IMAGE_PREFIX:-ghcr.io/your-username/satusehat-engine}/frontend:latest
+    container_name: satusehat-frontend
+    restart: always
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - satusehat_net
+
+  # -------------------------------------------------------------------
+  # 🤖 WATCHTOWER: AUTO-UPDATE ENGINE
+  # Otomatis mengecek image baru di GHCR, mengunduh, me-restart container,
+  # dan membersihkan image lama tanpa perlu intervensi manual.
+  # -------------------------------------------------------------------
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: satusehat-watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker/config.json:/config.json:ro
+    environment:
+      - WATCHTOWER_POLL_INTERVAL=300 # Interval pengecekan dalam detik (300 = 5 menit)
+      - WATCHTOWER_CLEANUP=true      # Otomatis hapus image lama dari disk
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+    networks:
+      - satusehat_net
+
+networks:
+  satusehat_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
