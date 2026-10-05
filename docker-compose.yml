@@ -96,8 +96,10 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ~/.docker/config.json:/config.json:ro
+      - ${HOME:-/root}/.docker:/config:ro
     environment:
+      - DOCKER_API_VERSION=1.41      # Memaksa Watchtower menggunakan Docker API modern (>= 1.40)
+      - DOCKER_CONFIG=/config
       - WATCHTOWER_POLL_INTERVAL=300 # Interval pengecekan dalam detik (300 = 5 menit)
       - WATCHTOWER_CLEANUP=true      # Otomatis hapus image lama dari disk
       - WATCHTOWER_INCLUDE_RESTARTING=true
